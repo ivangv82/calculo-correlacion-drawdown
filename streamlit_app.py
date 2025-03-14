@@ -127,7 +127,7 @@ def segment_analysis(returns, dd, segments):
     max_dd_df = pd.DataFrame(max_dd_segments).T
     fig_max_dd, ax = plt.subplots(figsize=(8,6))
     sns.heatmap(max_dd_df, annot=True, cmap='coolwarm', ax=ax)
-    ax.set_title("Peor (Mínimo) Drawdown por Segmento (NO es correlación)")
+    ax.set_title("Peor Drawdown registrado en el Periodo")
     plt.xlabel("Activo")
     plt.ylabel("Segmento")
     plt.tight_layout()
@@ -204,7 +204,7 @@ def compare_assets(data, dd, returns, ticker1, ticker2):
 # --------------------------------------------------------------------------------
 
 def main():
-    st.title("Análisis de Correlación de Activos con Streamlit (Mejorado)")
+    st.title("Análisis de Rendimiento, MDD y Correlación de Activos")
 
     # Inicializamos las variables de sesión, si no existen
     if "run_analysis" not in st.session_state:
@@ -261,14 +261,14 @@ def main():
         # Correlación de retornos
         fig_ret = plot_corr_heatmap(
             st.session_state.corr_returns,
-            f"Matriz de Correlación de Retornos (Spearman) [{st.session_state.start_str} - {st.session_state.end_str}]"
+            f"Matriz de Correlación de Retornos [{st.session_state.start_str} - {st.session_state.end_str}]"
         )
         st.pyplot(fig_ret)
 
         # Correlación de drawdowns
         fig_dd = plot_corr_heatmap(
             st.session_state.corr_dd,
-            f"Matriz de Correlación de Drawdowns (Spearman) [{st.session_state.start_str} - {st.session_state.end_str}]"
+            f"Matriz de Correlación de Drawdowns [{st.session_state.start_str} - {st.session_state.end_str}]"
         )
         st.pyplot(fig_dd)
 
