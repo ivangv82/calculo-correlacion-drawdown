@@ -210,7 +210,7 @@ def main():
         """
         <p style="text-align:center">
             <a href="https://formacionenbolsa.com" target="_blank">
-                <img src="logoFB.png" alt="FormacionenBolsa" style="height:80px;">
+                <img src="https://github.com/ivangv82/calculo-correlacion-drawdown/blob/main/logoFB.png" alt="FormacionenBolsa" style="height:80px;">
             </a>
         </p>
         """,
