@@ -206,16 +206,16 @@ def main():
     # LOGO Y CABECERA
     # --------------------------------------------------------------------------------
     # Mostramos el logo con link a tu web. Ajusta el 'height' a tu gusto.
- st.markdown(
-    """
-    <p style="text-align:center">
-        <a href="https://formacionenbolsa.com" target="_blank">
-            <img src="https://raw.githubusercontent.com/ivangv82/calculo-correlacion-drawdown/main/logoFB.png" alt="FormacionenBolsa" style="height:80px;">
-        </a>
-    </p>
-    """,
-    unsafe_allow_html=True
-)
+    st.markdown(
+        """
+         <p style="text-align:center">
+            <a href="https://formacionenbolsa.com" target="_blank">
+                <img src="https://raw.githubusercontent.com/ivangv82/calculo-correlacion-drawdown/main/logoFB.png" alt="FormacionenBolsa" style="height:80px;">
+            </a>
+        </p>
+        """,
+        unsafe_allow_html=True
+    )
 
     st.title("Análisis de Correlación de Activos 🚀")
     st.markdown("¡Bienvenid@ a la aplicación de análisis de activos de [formacionenbolsa.com](https://formacionenbolsa.com)!")
