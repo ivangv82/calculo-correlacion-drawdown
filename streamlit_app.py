@@ -28,7 +28,7 @@ def get_data(tickers, start_date, end_date):
             if len(tickers) == 1:
                 data.columns = tickers
 
-    # Convertimos todas las columnas a mayúsculas para evitar problemas de case
+    # Convertimos todas las columnas a mayúsculas para evitar problemas de mayúsc/minúsc
     data.columns = [col.upper() for col in data.columns]
     return data
 
@@ -45,16 +45,27 @@ def compute_drawdowns(data):
 def compute_stats(returns, dd):
     """
     Crea una tabla con:
-      - Mean Return
-      - Std Return
-      - Max Drawdown
+      - Annual Return (%): anualización del retorno medio diario (log returns)
+      - Annual Std (%): anualización de la volatilidad diaria
+      - Max Drawdown (%): peor drawdown histórico
+    Todo en porcentaje y redondeado a 2 decimales.
     """
+    # Media diaria (log returns) y desviación estándar diaria
+    daily_mean = returns.mean()
+    daily_std = returns.std()
+    
+    # Anualización (asumiendo ~252 días de mercado al año)
+    # Para log returns: annual_return = exp(daily_mean*252) - 1
+    annual_return = (np.exp(daily_mean * 252) - 1) * 100
+    annual_std = daily_std * np.sqrt(252) * 100
+    max_dd = dd.min() * 100  # Convertimos a %
+
     stats = pd.DataFrame({
-        'Mean Return': returns.mean(),
-        'Std Return': returns.std(),
-        'Max Drawdown': dd.min()
+        'Annual Return (%)': annual_return,
+        'Annual Std (%)': annual_std,
+        'Max Drawdown (%)': max_dd
     })
-    return stats
+    return stats.round(2)
 
 def plot_corr_heatmap(corr_matrix, title):
     """Devuelve un mapa de calor (heatmap) de correlaciones con la mitad superior enmascarada."""
@@ -127,10 +138,9 @@ def segment_analysis(returns, dd, segments):
 def compare_assets(data, dd, returns, ticker1, ticker2):
     """
     Genera y retorna una lista de figuras comparando:
-      - Evolución de precios
-      - Evolución de drawdowns
-      - Correlación rolling de retornos (30 días)
-      - Correlación rolling de drawdowns (30 días)
+      - (Figura 1) Precios en dos escalas (izq y der) + Drawdown en el mismo subplot inferior
+      - (Figura 2) Correlación rolling de retornos (30 días)
+      - (Figura 3) Correlación rolling de drawdowns (30 días)
     """
     figs = []
     t1 = ticker1.upper()
@@ -138,37 +148,52 @@ def compare_assets(data, dd, returns, ticker1, ticker2):
     
     if t1 not in data.columns or t2 not in data.columns:
         return figs  # Vacío si no existen
-    
-    # Figura 1: evolución de la cotización y drawdown
-    fig1, (ax1, ax2) = plt.subplots(2, 1, figsize=(10,8), sharex=True)
-    ax1.plot(data.index, data[t1], label=t1)
-    ax1.plot(data.index, data[t2], label=t2)
-    ax1.set_title("Cotización de los Activos")
-    ax1.legend()
-    
-    ax2.plot(dd.index, dd[t1], label=t1)
-    ax2.plot(dd.index, dd[t2], label=t2)
-    ax2.set_title("Evolución del Drawdown")
-    ax2.legend()
-    plt.tight_layout()
-    figs.append(fig1)
 
-    # Figura 2: correlación rolling de retornos (30 días)
+    # 1) Gráfico de precios con dos escalas y debajo el drawdown
+    fig = plt.figure(figsize=(10,8))
+
+    # Subplot superior (precios) con doble eje Y
+    ax1 = fig.add_subplot(2,1,1)
+    ax2 = ax1.twinx()
+    
+    ax1.plot(data.index, data[t1], label=t1, color='blue')
+    ax2.plot(data.index, data[t2], label=t2, color='red')
+    
+    ax1.set_title("Cotización de los Activos (2 Escalas)")
+    ax1.set_ylabel(f"Precio {t1}")
+    ax2.set_ylabel(f"Precio {t2}")
+    
+    # Unimos leyendas
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+
+    # Subplot inferior (drawdown) con un solo eje
+    ax3 = fig.add_subplot(2,1,2, sharex=ax1)
+    ax3.plot(dd.index, dd[t1], label=t1, color='blue')
+    ax3.plot(dd.index, dd[t2], label=t2, color='red')
+    ax3.set_title("Evolución del Drawdown")
+    ax3.legend()
+
+    plt.tight_layout()
+    figs.append(fig)
+
+    # 2) Correlación rolling de retornos (30 días)
     window = 30
     rolling_corr_returns = returns[t1].rolling(window).corr(returns[t2])
-    fig2, ax3 = plt.subplots(figsize=(10,4))
-    ax3.plot(rolling_corr_returns.index, rolling_corr_returns, label="Correlación Rolling Retornos")
-    ax3.set_title("Correlación Rolling de Retornos (30 días)")
-    ax3.legend()
+    fig2, ax4 = plt.subplots(figsize=(10,4))
+    ax4.plot(rolling_corr_returns.index, rolling_corr_returns, label="Correlación Rolling Retornos")
+    ax4.set_title("Correlación Rolling de Retornos (30 días)")
+    ax4.legend()
     plt.tight_layout()
     figs.append(fig2)
 
-    # Figura 3: correlación rolling de drawdowns (30 días)
+    # 3) Correlación rolling de drawdowns (30 días)
     rolling_corr_dd = dd[t1].rolling(window).corr(dd[t2])
-    fig3, ax4 = plt.subplots(figsize=(10,4))
-    ax4.plot(rolling_corr_dd.index, rolling_corr_dd, label="Correlación Rolling Drawdowns", color='orange')
-    ax4.set_title("Correlación Rolling de Drawdowns (30 días)")
-    ax4.legend()
+    fig3, ax5 = plt.subplots(figsize=(10,4))
+    ax5.plot(rolling_corr_dd.index, rolling_corr_dd, label="Correlación Rolling Drawdowns", color='orange')
+    ax5.set_title("Correlación Rolling de Drawdowns (30 días)")
+    ax5.legend()
     plt.tight_layout()
     figs.append(fig3)
 
@@ -179,7 +204,7 @@ def compare_assets(data, dd, returns, ticker1, ticker2):
 # --------------------------------------------------------------------------------
 
 def main():
-    st.title("Análisis de Correlación de Activos con Streamlit (usando Session State)")
+    st.title("Análisis de Correlación de Activos con Streamlit (Mejorado)")
 
     # Inicializamos las variables de sesión, si no existen
     if "run_analysis" not in st.session_state:
@@ -219,7 +244,7 @@ def main():
         st.session_state.returns = compute_log_returns(data)
         st.session_state.dd = compute_drawdowns(data)
         
-        # Estadísticas
+        # Estadísticas anuales en %
         st.session_state.stats = compute_stats(st.session_state.returns, st.session_state.dd)
         
         # Correlaciones globales
@@ -230,7 +255,7 @@ def main():
     if st.session_state.run_analysis and st.session_state.data is not None and not st.session_state.data.empty:
         
         # --- Mostrar resultados de análisis global ---
-        st.write("### Estadísticas de los activos")
+        st.write("### Estadísticas de los activos (en %)")
         st.dataframe(st.session_state.stats)
 
         # Correlación de retornos
