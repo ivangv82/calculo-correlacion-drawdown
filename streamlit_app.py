@@ -50,12 +50,10 @@ def compute_stats(returns, dd):
       - Max Drawdown (%): peor drawdown histórico
     Todo en porcentaje y redondeado a 2 decimales.
     """
-    # Media diaria (log returns) y desviación estándar diaria
     daily_mean = returns.mean()
     daily_std = returns.std()
     
-    # Anualización (asumiendo ~252 días de mercado al año)
-    # Para log returns: annual_return = exp(daily_mean*252) - 1
+    # Asumiendo ~252 días de mercado al año
     annual_return = (np.exp(daily_mean * 252) - 1) * 100
     annual_std = daily_std * np.sqrt(252) * 100
     max_dd = dd.min() * 100  # Convertimos a %
@@ -127,7 +125,7 @@ def segment_analysis(returns, dd, segments):
     max_dd_df = pd.DataFrame(max_dd_segments).T
     fig_max_dd, ax = plt.subplots(figsize=(8,6))
     sns.heatmap(max_dd_df, annot=True, cmap='coolwarm', ax=ax)
-    ax.set_title("Peor Drawdown registrado en el Periodo")
+    ax.set_title("Peor (Mínimo) Drawdown por Segmento (NO es correlación)")
     plt.xlabel("Activo")
     plt.ylabel("Segmento")
     plt.tight_layout()
@@ -138,7 +136,7 @@ def segment_analysis(returns, dd, segments):
 def compare_assets(data, dd, returns, ticker1, ticker2):
     """
     Genera y retorna una lista de figuras comparando:
-      - (Figura 1) Precios en dos escalas (izq y der) + Drawdown en el mismo subplot inferior
+      - (Figura 1) Precios en dos escalas (izq y der) + Drawdown en el subplot inferior
       - (Figura 2) Correlación rolling de retornos (30 días)
       - (Figura 3) Correlación rolling de drawdowns (30 días)
     """
@@ -204,7 +202,23 @@ def compare_assets(data, dd, returns, ticker1, ticker2):
 # --------------------------------------------------------------------------------
 
 def main():
-    st.title("Análisis de Rendimiento, MDD y Correlación de Activos")
+    # --------------------------------------------------------------------------------
+    # LOGO Y CABECERA
+    # --------------------------------------------------------------------------------
+    # Mostramos el logo con link a tu web. Ajusta el 'height' a tu gusto.
+    st.markdown(
+        """
+        <p style="text-align:center">
+            <a href="https://formacionenbolsa.com" target="_blank">
+                <img src="logoFB.png" alt="FormacionenBolsa" style="height:80px;">
+            </a>
+        </p>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.title("Análisis de Correlación de Activos 🚀")
+    st.markdown("¡Bienvenid@ a la aplicación de análisis de activos de [formacionenbolsa.com](https://formacionenbolsa.com)!")
 
     # Inicializamos las variables de sesión, si no existen
     if "run_analysis" not in st.session_state:
@@ -213,7 +227,7 @@ def main():
         st.session_state.data = None
 
     # --- Entrada de parámetros ---
-    st.subheader("Parámetros de entrada")
+    st.subheader("Parámetros de entrada ⚙️")
     ticker_input = st.text_input("Introduce los tickers separados por comas", "GLD, TLT, SPY, QQQ")
     
     col1, col2 = st.columns(2)
@@ -255,25 +269,25 @@ def main():
     if st.session_state.run_analysis and st.session_state.data is not None and not st.session_state.data.empty:
         
         # --- Mostrar resultados de análisis global ---
-        st.write("### Estadísticas de los activos (en %)")
+        st.write("### Estadísticas de los activos (en %) 📊")
         st.dataframe(st.session_state.stats)
 
         # Correlación de retornos
         fig_ret = plot_corr_heatmap(
             st.session_state.corr_returns,
-            f"Matriz de Correlación de Retornos [{st.session_state.start_str} - {st.session_state.end_str}]"
+            f"Matriz de Correlación de Retornos (Spearman) [{st.session_state.start_str} - {st.session_state.end_str}]"
         )
         st.pyplot(fig_ret)
 
         # Correlación de drawdowns
         fig_dd = plot_corr_heatmap(
             st.session_state.corr_dd,
-            f"Matriz de Correlación de Drawdowns [{st.session_state.start_str} - {st.session_state.end_str}]"
+            f"Matriz de Correlación de Drawdowns (Spearman) [{st.session_state.start_str} - {st.session_state.end_str}]"
         )
         st.pyplot(fig_dd)
 
         # --- Análisis por tramos ---
-        seg_option = st.checkbox("¿Desea calcular la correlación en varios tramos?")
+        seg_option = st.checkbox("¿Desea calcular la correlación en varios tramos? 🔀")
         if seg_option:
             segments = st.number_input("¿En cuántos tramos desea dividir los cálculos?", min_value=2, max_value=20, value=3)
             figs_segment = segment_analysis(st.session_state.returns, st.session_state.dd, segments)
@@ -281,7 +295,7 @@ def main():
                 st.pyplot(fig)
 
         # --- Comparación de dos activos ---
-        compare_option = st.checkbox("¿Desea comparar 2 activos en concreto?")
+        compare_option = st.checkbox("¿Desea comparar 2 activos en concreto? 🤝")
         if compare_option:
             st.write("Activos disponibles:", list(st.session_state.data.columns))
             col3, col4 = st.columns(2)
@@ -305,6 +319,17 @@ def main():
                     st.warning("No se pudo comparar. Revisa que ambos activos existan en los datos.")
             else:
                 st.warning("Debes elegir dos activos distintos para comparar.")
+
+    # --------------------------------------------------------------------------------
+    # ENLACE FINAL
+    # --------------------------------------------------------------------------------
+    st.markdown(
+        """
+        ---
+        ### [Visita formacionenbolsa.com para más recursos 🚀](https://formacionenbolsa.com)
+        """,
+        unsafe_allow_html=True
+    )
 
 if __name__ == "__main__":
     main()
